@@ -69,7 +69,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Publish to GitHub Packages
-        run: ./gradlew :library:publish
+        run: ./gradlew :library:publishReleasePublicationToGitHubPackagesRepository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
@@ -91,7 +91,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Publish to Maven Central
-        run: ./gradlew :library:publishAllPublicationsToMavenCentralRepository --no-configuration-cache
+        run: ./gradlew :library:publishReleasePublicationToMavenCentralRepository --no-configuration-cache
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
