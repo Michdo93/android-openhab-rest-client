@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
     // Token-Auth (Alternative zu Username/Password):
     // private val TOKEN = "oh.openhab.xxxx"
 
-    private val LIGHT_ITEM  = "LivingRoomLight"
+    private val LIGHT_ITEM  = "testSwitch"
     private val THING_UID   = "astro:sun:local"
     private val RULE_UID    = "my-automation-rule"
 
