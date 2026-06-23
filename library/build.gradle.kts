@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt")
     id("maven-publish")
+    id("signing")
 }
 
 android {
@@ -43,29 +44,39 @@ android {
 }
 
 dependencies {
-    // OkHttp — HTTP + SSE
     api(libs.okhttp)
     api(libs.okhttp.sse)
     implementation(libs.okhttp.logging)
-
-    // Moshi — JSON
     api(libs.moshi)
     api(libs.moshi.kotlin)
     kapt(libs.moshi.kotlin.codegen)
-
-    // Coroutines
     api(libs.coroutines.core)
     api(libs.coroutines.android)
-
-    // Tests
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
 }
 
-// Publish to local Maven (~/.m2) via `./gradlew publishToMavenLocal`
 afterEvaluate {
     publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/Michdo93/android-openhab-rest-client")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR") ?: ""
+                    password = System.getenv("GITHUB_TOKEN") ?: ""
+                }
+            }
+            maven {
+                name = "MavenCentral"
+                url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                credentials {
+                    username = System.getenv("SONATYPE_USERNAME") ?: ""
+                    password = System.getenv("SONATYPE_PASSWORD") ?: ""
+                }
+            }
+        }
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
@@ -90,8 +101,22 @@ afterEvaluate {
                             email.set("michaeldoerflinger93@gmail.com")
                         }
                     }
+                    scm {
+                        url.set("https://github.com/Michdo93/android-openhab-rest-client")
+                        connection.set("scm:git:git://github.com/Michdo93/android-openhab-rest-client.git")
+                        developerConnection.set("scm:git:ssh://git@github.com/Michdo93/android-openhab-rest-client.git")
+                    }
                 }
             }
+        }
+    }
+
+    signing {
+        val signingKey      = System.getenv("SIGNING_KEY")
+        val signingPassword = System.getenv("SIGNING_PASSWORD")
+        if (!signingKey.isNullOrEmpty() && !signingPassword.isNullOrEmpty()) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+            sign(publishing.publications["release"])
         }
     }
 }

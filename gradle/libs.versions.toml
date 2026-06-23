@@ -12,26 +12,19 @@ compileSdk       = "35"
 targetSdk        = "35"
 
 [libraries]
-# OkHttp — HTTP-Client
-okhttp                  = { group = "com.squareup.okhttp3", name = "okhttp",           version.ref = "okhttp" }
-okhttp-sse              = { group = "com.squareup.okhttp3", name = "okhttp-sse",        version.ref = "okhttp" }
-okhttp-logging          = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
-
-# Moshi — JSON (Codegen, kein Reflection, klein)
-moshi                   = { group = "com.squareup.moshi",   name = "moshi",              version.ref = "moshi" }
-moshi-kotlin            = { group = "com.squareup.moshi",   name = "moshi-kotlin",       version.ref = "moshi" }
-moshi-kotlin-codegen    = { group = "com.squareup.moshi",   name = "moshi-kotlin-codegen", version.ref = "moshi" }
-
-# Kotlin Coroutines
+okhttp                  = { group = "com.squareup.okhttp3", name = "okhttp",                version.ref = "okhttp" }
+okhttp-sse              = { group = "com.squareup.okhttp3", name = "okhttp-sse",             version.ref = "okhttp" }
+okhttp-logging          = { group = "com.squareup.okhttp3", name = "logging-interceptor",    version.ref = "okhttp" }
+moshi                   = { group = "com.squareup.moshi",   name = "moshi",                  version.ref = "moshi" }
+moshi-kotlin            = { group = "com.squareup.moshi",   name = "moshi-kotlin",           version.ref = "moshi" }
+moshi-kotlin-codegen    = { group = "com.squareup.moshi",   name = "moshi-kotlin-codegen",   version.ref = "moshi" }
 coroutines-core         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core",    version.ref = "coroutines" }
 coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
-# Tests
-junit                   = { group = "junit",                 name = "junit",              version.ref = "junit" }
-mockk                   = { group = "io.mockk",              name = "mockk",              version.ref = "mockk" }
+junit                   = { group = "junit",                 name = "junit",                  version.ref = "junit" }
+mockk                   = { group = "io.mockk",              name = "mockk",                  version.ref = "mockk" }
 coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutinesTest" }
 
 [plugins]
-android-library         = { id = "com.android.library",      version.ref = "agp" }
-android-application     = { id = "com.android.application",  version.ref = "agp" }
+android-library         = { id = "com.android.library",          version.ref = "agp" }
+android-application     = { id = "com.android.application",      version.ref = "agp" }
 kotlin-android          = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
