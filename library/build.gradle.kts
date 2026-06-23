@@ -68,21 +68,13 @@ afterEvaluate {
                     password = System.getenv("GITHUB_TOKEN") ?: ""
                 }
             }
-            maven {
-                name = "MavenCentral"
-                url = uri("https://central.sonatype.com/api/v1/publisher/upload")
-                credentials {
-                    username = System.getenv("SONATYPE_USERNAME") ?: ""
-                    password = System.getenv("SONATYPE_PASSWORD") ?: ""
-                }
-            }
         }
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
                 groupId    = "io.github.michdo93"
                 artifactId = "openhab-rest-client-android"
-                version    = "1.0.3"
+                version    = "1.0.4"
 
                 pom {
                     name.set("OpenHAB REST Client Android")
