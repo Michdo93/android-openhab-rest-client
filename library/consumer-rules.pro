@@ -1,0 +1,3 @@
+-keep class io.github.michdo93.openhab.** { *; }
+-keepnames class io.github.michdo93.openhab.** { *; }
+-keepclassmembers class io.github.michdo93.openhab.** { *; }
