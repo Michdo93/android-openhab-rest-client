@@ -82,7 +82,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId    = "io.github.michdo93"
                 artifactId = "openhab-rest-client-android"
-                version    = "1.0.0"
+                version    = "1.0.3"
 
                 pom {
                     name.set("OpenHAB REST Client Android")
