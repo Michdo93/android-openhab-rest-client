@@ -91,7 +91,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Publish to Maven Central
-        run: ./gradlew :library:publishReleasePublicationToMavenCentralRepository --no-configuration-cache
+        run: ./gradlew publishAggregationToCentralPortal --no-configuration-cache
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
