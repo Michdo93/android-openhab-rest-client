@@ -1,328 +1,90 @@
-# Android Library veröffentlichen — Schritt-für-Schritt
+# android-openhab-rest-client veröffentlichen
 
-## Was wurde erstellt
+Ab 2.0.0 ist die Bibliothek ein reines Kotlin/JVM-Projekt (ein Modul im Hauptordner, kein
+`library/`, keine `app-example`). Das Ergebnis ist eine JAR-Datei, die Android-Apps und jede JVM
+verwenden. Einzige Abhängigkeit: `kotlinx-coroutines-core`.
 
 ```
-openhab-android/
-├── library/                       ← Das AAR-Paket (die eigentliche Library)
-│   ├── build.gradle.kts
-│   └── src/main/kotlin/
-│       └── io/github/michdo93/openhab/
-│           ├── OpenHAB.kt         ← Einstiegspunkt (Facade)
-│           ├── client/
-│           │   ├── OpenHABClient.kt
-│           │   ├── OpenHABException.kt
-│           │   └── SseSession.kt
-│           ├── api/               ← Items, Things, Rules, ... (25 Klassen)
-│           └── events/            ← ItemEvents, ThingEvents, ... (SSE)
-├── app-example/                   ← Vollständige Beispiel-App
-│   └── src/main/kotlin/.../MainActivity.kt
-├── settings.gradle.kts
-├── build.gradle.kts
-└── gradle/libs.versions.toml
+android-openhab-rest-client/
+├── build.gradle.kts          ← Version, Abhängigkeiten, Veröffentlichung
+├── settings.gradle.kts       ← Maven-Central-Plugin (nmcp)
+├── gradle/libs.versions.toml ← Kotlin-, Coroutines- und JUnit-Version
+├── jitpack.yml               ← JDK 17 für JitPack
+├── src/main/kotlin/io/github/michdo93/openhab/
+│   ├── OpenHABClient.kt, Json.kt, SSEConnection.kt, SSESocket.kt, SSE.kt, Py.kt, …  (von Hand)
+│   └── Items.kt, Things.kt, … OpenHAB.kt                                            (erzeugt)
+├── src/test/kotlin/…         ← Unit- und Integrationstests (JUnit 5)
+└── tools/py2kt.py            ← Generator aus python-openhab-rest-client
 ```
 
----
-
-## Schritt 1: In Android Studio öffnen
-
-1. Android Studio öffnen
-2. **File → Open** → `openhab-android/` auswählen
-3. Gradle sync abwarten (lädt OkHttp, Moshi, Coroutines)
-4. Beispiel-App direkt starten: Gerät/Emulator wählen → **Run** auf `app-example`
-
----
-
-## Schritt 2: AAR bauen
-
-Ein `.aar` ist das Android-Äquivalent einer `.jar`-Datei — enthält Klassen,
-Ressourcen, AndroidManifest und Proguard-Regeln.
-
-### In Android Studio:
-```
-Build → Make Module 'library'
-```
-
-Das AAR liegt dann in:
-```
-library/build/outputs/aar/library-release.aar
-```
-
-### Per Kommandozeile:
-```bash
-cd openhab-android
-./gradlew :library:assembleRelease
-```
-
----
-
-## Schritt 3: Library in ein anderes Projekt einbinden
-
-### Option A — AAR direkt einbinden
-
-1. `library-release.aar` in `app/libs/` kopieren
-2. In der `app/build.gradle.kts`:
-
-```kotlin
-dependencies {
-    implementation(files("libs/library-release.aar"))
-
-    // Transitive Abhängigkeiten manuell angeben:
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:okhttp-sse:4.12.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-}
-```
-
-### Option B — Lokales Maven (empfohlen für Entwicklung)
-
-Library ins lokale Maven-Repository (`~/.m2`) installieren:
-```bash
-./gradlew :library:publishToMavenLocal
-```
-
-In jedem anderen Projekt dann in `settings.gradle.kts`:
-```kotlin
-dependencyResolutionManagement {
-    repositories {
-        mavenLocal()   // ← zuerst!
-        google()
-        mavenCentral()
-    }
-}
-```
-
-Und in `build.gradle.kts`:
-```kotlin
-dependencies {
-    implementation("io.github.michdo93:openhab-rest-client-android:1.0.0")
-}
-```
-
-### Option C — git submodule (für Monorepos)
+## 1. Klassen neu erzeugen (bei einer neuen Python-Version)
 
 ```bash
-git submodule add https://github.com/Michdo93/android-openhab-rest-client
+python3 tools/py2kt.py ../python-openhab-rest-client/openhab src/main/kotlin/io/github/michdo93/openhab
+python3 tools/py2kt.py --readme ../python-openhab-rest-client/openhab   # Tabellen für README.md
 ```
 
-In `settings.gradle.kts`:
-```kotlin
-include(":openhab-rest-client-android:library")
-project(":openhab-rest-client-android:library").projectDir =
-    file("openhab-rest-client-android/library")
-```
-
-In `build.gradle.kts`:
-```kotlin
-dependencies {
-    implementation(project(":openhab-rest-client-android:library"))
-}
-```
-
----
-
-## Schritt 4: Öffentlich veröffentlichen
-
-### GitHub Packages (einfachster öffentlicher Weg)
-
-In `library/build.gradle.kts` ergänzen:
-```kotlin
-publishing {
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url  = uri("https://maven.pkg.github.com/Michdo93/android-openhab-rest-client")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}
-```
-
-Veröffentlichen:
-```bash
-GITHUB_ACTOR=Michdo93 GITHUB_TOKEN=ghp_xxx \
-    ./gradlew :library:publish
-```
-
-Nutzer fügen in ihrer `settings.gradle.kts` ein:
-```kotlin
-maven {
-    url = uri("https://maven.pkg.github.com/Michdo93/android-openhab-rest-client")
-    credentials {
-        username = "GithubUsername"
-        password = "ghp_PersonalAccessToken"
-    }
-}
-```
-
----
-
-### Maven Central (maximale Reichweite)
-
-Erfordert:
-- Account auf [central.sonatype.com](https://central.sonatype.com)
-- GPG-Schlüssel für Signierung
-- Namespace-Verifizierung (`io.github.michdo93`)
-
-Dann in `library/build.gradle.kts`:
-```kotlin
-plugins {
-    id("signing")
-    id("maven-publish")
-}
-
-signing {
-    sign(publishing.publications["release"])
-}
-```
+## 2. Bauen und testen
 
 ```bash
-./gradlew :library:publishToSonatype :library:closeAndReleaseSonatypeStagingRepository
+./gradlew build                  # Unit-Tests gegen einen lokalen HTTP-Server, JARs in build/libs/
+OPENHAB_URL=http://127.0.0.1:8080 OPENHAB_TOKEN=oh.… ./gradlew test   # zusätzlich gegen openHAB
 ```
 
-Danach ist die Library über:
-```kotlin
-implementation("io.github.michdo93:openhab-rest-client-android:1.0.0")
+`build/libs/` enthält danach `android-openhab-rest-client-<version>.jar` sowie `-sources.jar` und
+`-javadoc.jar`.
+
+## 3. Version erhöhen
+
+`version` in `build.gradle.kts` und die Versionsnummern in `README.md` anpassen.
+
+## 4. Veröffentlichen
+
+### JitPack (Hauptweg, ohne Einrichtung)
+
+Tag **ohne `v`** pushen – JitPack verwendet den Tag-Namen genau als Version:
+
+```bash
+git tag 2.0.0
+git push origin main 2.0.0
 ```
 
-ohne extra Repository-Angabe verfügbar.
-
----
-
-### JitPack (zero Setup)
-
-Sobald das Repo auf GitHub liegt:
-```kotlin
-// settings.gradle.kts
-repositories { maven("https://jitpack.io") }
-
-// build.gradle.kts
-implementation("com.github.Michdo93:android-openhab-rest-client:v1.0.0")
-```
-
----
-
-## Verwendung in der App
-
-### Minimales Setup
+Danach auf [jitpack.io/#Michdo93/android-openhab-rest-client](https://jitpack.io/#Michdo93/android-openhab-rest-client)
+„Get it“ bei 2.0.0 anklicken und im Log prüfen, ob der Bau durchläuft. Einbinden:
 
 ```kotlin
-// Einmalig (z.B. in ViewModel oder Application)
-val openHAB = OpenHAB(
-    url      = "http://192.168.1.100:8080",
-    username = "openhab",
-    password = "habopen",
-)
-
-// Login (optional, wird automatisch beim ersten Request geprüft)
-lifecycleScope.launch {
-    openHAB.login()
-}
+implementation("com.github.Michdo93:android-openhab-rest-client:2.0.0")
 ```
 
-### Items
+Ein fehlgeschlagener Bau bleibt zwischengespeichert: bei jitpack.io mit GitHub anmelden, dann
+erscheint neben dem Log ein Papierkorb-Symbol zum Löschen.
 
-```kotlin
-// Alle Items
-val items = openHAB.items.getItems()
+### GitHub Release, GitHub Packages und Maven Central
 
-// Befehl senden
-openHAB.items.sendCommand("LivingRoomLight", "ON")
+Ein GitHub-Release zum Tag startet den Workflow `.github/workflows/ci.yml`:
 
-// Status lesen
-val state = openHAB.items.getItemState("LivingRoomLight")
+- **GitHub Packages:** `io.github.michdo93:android-openhab-rest-client` (Nutzer brauchen ein Token
+  mit `read:packages`)
+- **Maven Central:** nur wenn die Secrets `SIGNING_KEY`, `SIGNING_PASSWORD`, `SONATYPE_USERNAME`
+  und `SONATYPE_PASSWORD` im Repository hinterlegt sind (Namespace `io.github.michdo93`)
 
-// State setzen
-openHAB.items.updateItemState("Thermostat", "21.5")
+Die JAR-Datei aus `build/libs/` (oder aus dem Artefakt des CI-Laufs) als Asset an das Release
+hängen – für alle, die ohne Repository arbeiten.
+
+Lokal ins eigene Maven-Repository (zum Ausprobieren in einer App):
+
+```bash
+./gradlew publishToMavenLocal    # danach mavenLocal() in settings.gradle.kts der App
 ```
-
-### SSE (Live-Updates)
-
-```kotlin
-// In einem ViewModel:
-class SmartHomeViewModel : ViewModel() {
-    private val openHAB = OpenHAB("http://192.168.1.100:8080", "openhab", "habopen")
-
-    val lightState = openHAB.itemEvents
-        .itemStateChangedEvent("LivingRoomLight")
-        .collect()                         // Flow<String>
-        .map { json -> parseState(json) }  // eigener Parser
-        .stateIn(viewModelScope, SharingStarted.Lazily, "UNKNOWN")
-}
-
-// In der Activity:
-viewModel.lightState
-    .flowWithLifecycle(lifecycle)
-    .onEach { state -> updateSwitch(state == "ON") }
-    .launchIn(lifecycleScope)
-```
-
-### Fehlerbehandlung
-
-```kotlin
-try {
-    openHAB.items.sendCommand("LivingRoomLight", "ON")
-} catch (e: OpenHABException) {
-    when (e.statusCode) {
-        401  -> showError("Keine Berechtigung")
-        404  -> showError("Item nicht gefunden")
-        else -> showError("Fehler ${e.statusCode}: ${e.message}")
-    }
-}
-```
-
-### JSON parsen (mit Moshi — bereits als Abhängigkeit enthalten)
-
-```kotlin
-import com.squareup.moshi.*
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-
-data class OpenHABItem(
-    val name: String,
-    val type: String,
-    val state: String? = null,
-)
-
-val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-val adapter = moshi.adapter(OpenHABItem::class.java)
-
-val item = adapter.fromJson(openHAB.items.getItem("LivingRoomLight"))
-println(item?.state)   // "ON"
-```
-
----
-
-## Berechtigungen
-
-Die Library fügt automatisch `INTERNET` ins Manifest ein (Manifest Merger).
-Keine weitere Konfiguration nötig.
-
----
-
-## ProGuard / R8
-
-Für Release-Builds mit Minifizierung in `proguard-rules.pro` eintragen:
-```proguard
--keep class io.github.michdo93.openhab.** { *; }
--keepnames class io.github.michdo93.openhab.** { *; }
-```
-
-Oder die mitgelieferte `consumer-rules.pro` wird automatisch beim AAR-Import
-angewendet (empfohlen).
-
----
 
 ## Mindestanforderungen
 
 | | Anforderung |
 |---|---|
-| Android API | 21+ (Android 5.0 Lollipop) |
-| Kotlin | 2.0+ |
+| Android | API 21+ (Android 5.0), Berechtigung `INTERNET` |
+| JVM | Java 8+ (gebaut mit JDK 17) |
+| Kotlin in der App | 1.9+ |
 | Coroutines | 1.8+ |
-| OkHttp | 4.12+ |
-| Gradle | 8.5+ |
-| Android Gradle Plugin | 8.5+ |
+| Gradle (Bau der Bibliothek) | 8.11 (Wrapper) |
+
+ProGuard/R8: keine eigenen Regeln nötig, die Bibliothek verwendet keine Reflexion.
